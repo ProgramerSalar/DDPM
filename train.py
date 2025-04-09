@@ -37,7 +37,7 @@ def evalulate(config, epoch, pipeline, model):
 
 def main():
 
-    train_dataloader = ImageDataset(image_folder="E:\\YouTube\\ddpm\\dataset\\cat_dog_images")
+    train_dataloader = ImageDataset(image_folder="E:\\YouTube\\DDPM-coding\\dataset\\cat_dog_images")
     train_dataloader = DataLoader(dataset=train_dataloader, 
                                   batch_size=6,
                                   shuffle=True)
