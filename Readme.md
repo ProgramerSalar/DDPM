@@ -174,12 +174,78 @@ To resume training from a checkpoint, set the `resume` parameter in the configur
 
 ### Key Components
 
-1. **[ddpm.py](ddpm.py)**: Implements the DDPM pipeline, including forward and reverse diffusion processes.
+1. **[ddpm.py](ddpm.py)**: Implements the DDPM pipeline, including forward and reverse diffusion processes, and sampling.
 2. **[models/unet.py](models/unet.py)**: Defines the UNet model architecture.
 3. **[models/layers.py](models/layers.py)**: Contains building blocks for the UNet model, including convolutional and attention layers.
 4. **[ImageDataset.py](ImageDataset.py)**: Handles dataset loading, preprocessing, and augmentation.
 5. **[train.py](train.py)**: Training script for the DDPM model.
 6. **[utils.py](utils.py)**: Utility functions for image processing and visualization.
+
+---
+
+### DDPMPipeline Class Functionality
+
+The `DDPMPipeline` class, implemented in **[ddpm.py](ddpm.py)**, is the core of the diffusion process. It handles forward diffusion, reverse diffusion, and sampling. Below is an overview of its functionality:
+
+#### Key Methods in the `DDPMPipeline` Class:
+1. **`__init__`**:
+   - Initializes the DDPM pipeline with parameters such as:
+     - `beta_start`: Starting value for the beta schedule.
+     - `beta_end`: Ending value for the beta schedule.
+     - `num_timesteps`: Number of timesteps in the diffusion process.
+   - Precomputes `alphas` and `alphas_hat` for efficient computation.
+
+2. **`forward_diffusion(images, timesteps)`**:
+   - Implements the forward diffusion process by adding noise to the input images.
+   - Uses Equation (14) from the DDPM paper.
+   - Returns the noisy images and the added Gaussian noise.
+
+3. **`reverse_diffusion(model, noisy_images, timesteps)`**:
+   - Implements the reverse diffusion process to predict and remove noise step by step.
+   - Uses the provided model (e.g., UNet) to predict the noise.
+
+4. **`sampling(model, initial_noise, device, save_all_steps=False)`**:
+   - Implements the sampling process (Algorithm 2 from the DDPM paper).
+   - Starts from random noise and iteratively denoises it to generate images.
+   - Parameters:
+     - `model`: The trained noise prediction model (e.g., UNet).
+     - `initial_noise`: The starting noise tensor.
+     - `device`: The device to perform computations on (e.g., "cuda" or "cpu").
+     - `save_all_steps`: If `True`, saves all intermediate steps of the sampling process.
+   - Returns the final generated image or all intermediate steps.
+
+---
+
+### Example Usage of the `DDPMPipeline` Class
+
+Here is an example of how to use the `DDPMPipeline` class in your code:
+
+```python
+# filepath: [ddpm.py](http://_vscodecontentref_/2)
+import torch
+from ddpm import DDPMPipeline
+from models.unet import UNet
+
+# Initialize the UNet model
+model = UNet(image_channels=3, base_channels=64)
+
+# Initialize the DDPM pipeline
+ddpm = DDPMPipeline(beta_start=1e-4, beta_end=1e-2, num_timesteps=1000)
+
+# Forward diffusion (training)
+images = torch.randn(16, 3, 256, 256)  # Example batch of images
+timesteps = torch.randint(0, 1000, (16,))  # Random timesteps for the batch
+noisy_images, noise = ddpm.forward_diffusion(images, timesteps)
+
+# Reverse diffusion (sampling)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+initial_noise = torch.randn(16, 3, 256, 256).to(device)  # Starting noise
+generated_images = ddpm.sampling(model, initial_noise, device)
+
+# Compute loss during training
+predicted_noise = model(noisy_images, timesteps)
+loss = torch.nn.functional.mse_loss(predicted_noise, noise)
+```
 
 ### Pipeline
 
@@ -193,6 +259,14 @@ The UNet model is used for noise prediction. It consists of:
 - Downsampling blocks with convolutional and attention layers.
 - A bottleneck layer with self-attention.
 - Upsampling blocks with convolutional and attention layers.
+
+
+### Explanation:
+- The **Key Methods** section explains the purpose of each method in the [DDPMPipeline](https://github.com/ProgramerSalar/DDPM/blob/master/ddpm.py) class.
+- The **Example Usage** section demonstrates how to use the class for forward diffusion, reverse diffusion, and sampling.
+- The **Pipeline** section summarizes the overall process.
+
+You can add this updated section to your Readme file under the **Code Overview** section.
 
 ---
 
